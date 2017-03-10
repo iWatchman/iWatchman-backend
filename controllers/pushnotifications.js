@@ -24,4 +24,4 @@ var self = module.exports = {
       console.log(result);
     });
   }
-}
+};

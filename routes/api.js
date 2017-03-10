@@ -17,7 +17,7 @@
 
 const express = require('express');
 const router = express.Router();
-var pushnotifications = require('./controllers/pushnotifications');
+// var pushnotifications = require('./controllers/pushnotifications');
 
 router.get('/', function(req, res) {
   res.json({ message: 'hooray! welcome to our api!' });
