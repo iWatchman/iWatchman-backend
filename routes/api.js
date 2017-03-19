@@ -17,23 +17,21 @@
 
 const express = require('express');
 const router = express.Router();
-const sqlite3 = require('sqlite3').verbose();
+const sqlite = require('sqlite3').verbose();
 
-var db = new sqlite3.Database('./db/iWatchman.db');
+var db = new sqlite.Database('./db/iWatchman.db');
 // var pushnotifications = require('./controllers/pushnotifications');
 
 router.get('/', function(req, res) {
   res.json({ message: 'hooray! welcome to our api!' });
 });
 
-router.get('/getAllEvents', (req, res, next) => {
+router.get('/getAllEvents', (req, res) => {
   db.all("SELECT * FROM events", function(err, rows) {
     if (err) {
-      next(err);
       console.log(err);
-      return;
+      return res.status(500).send(err);
     }
-    console.log(rows);
     res.send(rows);
   });
 });
@@ -42,21 +40,35 @@ router.get('/getVideoClip/:clip_id', (req, res) => {
   res.sendfile('./video_clips/clip' + req.params.clip_id +'.mp4', {root: './' })
 });
 
-router.post('/uploadVideoClip', function(req, res) {
+router.post('/reportEvent', function(req, res) {
   if (!req || !req.files.videoClip || !req.files)
-  return res.status(400).send('No file was uploaded.');
+  return res.status(500).send('No file was uploaded.');
 
   let uploadedFile = req.files.videoClip;
 
-  // TODO: Give a different name to each clip with an ID appended
-  uploadedFile.mv('./video_clips/clip2.jpg', function(err) {
-    if (err)
-    return res.status(500).send(err);
+  db.all("SELECT * FROM events WHERE id = (SELECT MAX(id)  FROM events);", function(err, rows) {
+    if (err) {
+      console.log(err);
+      return res.status(500).send(err);
+    }
 
-    // send push notification with the id of the video clip
-    //pushnotifications.sendPushNotification(id)
+    var eventID = (rows[0].id + 1);
+    uploadedFile.mv('./video_clips/clip' + eventID + '.mp4', function(err) {
+      if (err)
+      return res.status(500).send(err);
 
-    res.send('File uploaded!');
+      try {
+        db.run("INSERT into events(id, date, camera_name) VALUES ('" + eventID
+        + "','" + req.body.date + "','" + req.body.camera_name + "')");
+      } catch(err) {
+        return res.status(500).send(err);
+      }
+
+      // send push notification with the id of the video clip
+      //pushnotifications.sendPushNotification(eventID)
+
+      res.send('File uploaded!');
+    });
   });
 });
 
