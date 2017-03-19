@@ -19,8 +19,8 @@ const express = require('express');
 const router = express.Router();
 const sqlite = require('sqlite3').verbose();
 
+var pushnotifications = require('./controllers/pushnotifications');
 var db = new sqlite.Database('./db/iWatchman.db');
-// var pushnotifications = require('./controllers/pushnotifications');
 
 router.get('/', function(req, res) {
   res.json({ message: 'hooray! welcome to our api!' });
@@ -41,7 +41,7 @@ router.get('/getVideoClip/:event_id', (req, res) => {
 });
 
 router.post('/reportEvent', function(req, res) {
-  if (!req || !req.files.videoClip || !req.files)
+  if (!req || !req.files || !req.files.videoClip)
   return res.status(500).send('No file was uploaded.');
 
   let uploadedFile = req.files.videoClip;
@@ -67,8 +67,7 @@ router.post('/reportEvent', function(req, res) {
         return res.status(500).send(err);
       }
 
-      // send push notification with the id of the video clip
-      //pushnotifications.sendPushNotification(eventID)
+      sendPushNotification(eventID);
 
       res.send('File uploaded!');
     });
@@ -89,5 +88,19 @@ router.post('/registerDevice', function(req, res) {
   res.send('Device registered!');
 
 });
+
+function sendPushNotification(id) {
+  db.all("SELECT DISTINCT deviceToken FROM client_devices", function(err, rows) {
+    if (err) {
+      console.log(err);
+      return
+    }
+    rows.forEach(function (row) {
+      console.log(row.deviceToken);
+      // send push notification with the id of the video clip
+      //pushnotifications.sendPushNotification(eventID, row.deviceToken);
+    });
+  });
+}
 
 module.exports = router;

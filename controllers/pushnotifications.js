@@ -10,7 +10,7 @@ var apnProvider = new apn.Provider({
 });
 
 var self = module.exports = {
-  var deviceToken = 'xxxxxxxxxxxxxxxxxx'; // Dvice token
+  // var deviceToken = 'xxxxxxxxxxxxxxxxxx'; // Dvice token
   var notification = new apn.Notification();
   notification.topic = 'my.bundle.id'; // iOS app's Bundle ID
   notification.expiry = Math.floor(Date.now() / 1000) + 3600;
@@ -18,7 +18,7 @@ var self = module.exports = {
   notification.sound = 'ping.aiff';
   notification.alert = 'Hello World \u270C';
 
-  sendPushNotification: function(id) {
+  sendPushNotification: function(id, deviceToken) {
     notification.payload = {eventID: id};
     apnProvider.send(notification, deviceToken).then(function(result) {
       console.log(result);
