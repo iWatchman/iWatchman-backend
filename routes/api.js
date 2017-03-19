@@ -17,14 +17,29 @@
 
 const express = require('express');
 const router = express.Router();
+const sqlite3 = require('sqlite3').verbose();
+
+var db = new sqlite3.Database('./db/iWatchman.db');
 // var pushnotifications = require('./controllers/pushnotifications');
 
 router.get('/', function(req, res) {
   res.json({ message: 'hooray! welcome to our api!' });
 });
 
+router.get('/getAllEvents', (req, res, next) => {
+  db.all("SELECT * FROM events", function(err, rows) {
+    if (err) {
+      next(err);
+      console.log(err);
+      return;
+    }
+    console.log(rows);
+    res.send(rows);
+  });
+});
+
 router.get('/getVideoClip/:clip_id', (req, res) => {
-  res.json({ message: 'This api will return the video for id: ' + req.params.clip_id });
+  res.sendfile('./video_clips/clip' + req.params.clip_id +'.mp4', {root: './' })
 });
 
 router.post('/uploadVideoClip', function(req, res) {
