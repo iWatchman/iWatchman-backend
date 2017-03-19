@@ -54,13 +54,16 @@ router.post('/reportEvent', function(req, res) {
 
     var eventID = (rows[0].id + 1);
     uploadedFile.mv('./video_clips/clip' + eventID + '.mp4', function(err) {
-      if (err)
-      return res.status(500).send(err);
+      if (err) {
+        console.log(err);
+        return res.status(500).send(err);
+      }
 
       try {
         db.run("INSERT into events(id, date, camera_name) VALUES ('" + eventID
-        + "','" + req.body.date + "','" + req.body.camera_name + "')");
+        + "','" + req.body.date + "','" + req.body.cameraName + "')");
       } catch(err) {
+        console.log(err);
         return res.status(500).send(err);
       }
 
@@ -70,6 +73,21 @@ router.post('/reportEvent', function(req, res) {
       res.send('File uploaded!');
     });
   });
+});
+
+router.post('/registerDevice', function(req, res) {
+  if (!req)
+  return res.status(500)
+
+  try {
+    db.run("INSERT into client_devices(deviceToken) VALUES ('" + req.body.deviceToken + "')");
+  } catch(err) {
+    console.log(err);
+    return res.status(500).send(err);
+  }
+
+  res.send('Device registered!');
+
 });
 
 module.exports = router;
