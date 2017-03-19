@@ -36,8 +36,8 @@ router.get('/getAllEvents', (req, res) => {
   });
 });
 
-router.get('/getVideoClip/:clip_id', (req, res) => {
-  res.sendfile('./video_clips/clip' + req.params.clip_id +'.mp4', {root: './' })
+router.get('/getVideoClip/:event_id', (req, res) => {
+  res.sendfile('./video_clips/clip' + req.params.event_id +'.mp4', {root: './' })
 });
 
 router.post('/reportEvent', function(req, res) {

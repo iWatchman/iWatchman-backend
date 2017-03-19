@@ -19,7 +19,7 @@ var self = module.exports = {
   notification.alert = 'Hello World \u270C';
 
   sendPushNotification: function(id) {
-    notification.payload = {videoClipId: id};
+    notification.payload = {eventID: id};
     apnProvider.send(notification, deviceToken).then(function(result) {
       console.log(result);
     });
