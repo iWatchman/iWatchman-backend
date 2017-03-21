@@ -13,23 +13,42 @@
 * limitations under the License.
 */
 
+/**
+* Command to run the proxy
+* ./cloud_sql_proxy -instances=test-project-156600:us-east1:iwatchman-db=tcp:3306\
+*                  -credential_file=Test-Project-82970989ad1a.json &
+*/
+
 'use strict';
 
 const express = require('express');
 const router = express.Router();
-const sqlite = require('sqlite3').verbose();
+const mysql = require('mysql');
 
-var pushnotifications = require('./controllers/pushnotifications');
-var db = new sqlite.Database('./db/iWatchman.db');
+var ffmpeg = require('ffmpeg');
+var FfmpegCommand = require('fluent-ffmpeg');
+var thumbler = require('video-thumb');
+
+// var pushnotifications = require('./controllers/pushnotifications');
+
+var config = {
+  user: 'root',
+  password: 'iwatchman',
+  database: 'iwatchman'
+};
+
+//config.socketPath = `/cloudsql/test-project-156600:us-east1:iwatchman-db`;
+
+const dbconnection = mysql.createConnection(config);
 
 router.get('/', function(req, res) {
   res.json({ message: 'hooray! welcome to our api!' });
 });
 
 router.get('/getAllEvents', (req, res) => {
-  db.all("SELECT * FROM events", function(err, rows) {
+  dbconnection.query('SELECT * FROM events', function(err, rows, fields) {
     if (err) {
-      console.log(err);
+      console.error(err);
       return res.status(500).send(err);
     }
     res.send(rows);
@@ -40,33 +59,46 @@ router.get('/getVideoClip/:event_id', (req, res) => {
   res.sendfile('./video_clips/clip' + req.params.event_id +'.mp4', {root: './' })
 });
 
+router.get('/getVideoThumbnail/:event_id', (req, res) => {
+  res.sendfile('./video_thumbnails/clip' + req.params.event_id + 'thumbnail.png', {root: './' })
+});
+
 router.post('/reportEvent', function(req, res) {
   if (!req || !req.files || !req.files.videoClip)
   return res.status(500).send('No file was uploaded.');
 
   let uploadedFile = req.files.videoClip;
 
-  db.all("SELECT * FROM events WHERE id = (SELECT MAX(id)  FROM events);", function(err, rows) {
+  // Find the last id on the database
+  dbconnection.query('SELECT * FROM events WHERE id = (SELECT MAX(id)  FROM events)', function(err, rows, fields) {
     if (err) {
-      console.log(err);
+      console.error(err);
       return res.status(500).send(err);
     }
 
     var eventID = (rows[0].id + 1);
+    // Move the file to the local folder
     uploadedFile.mv('./video_clips/clip' + eventID + '.mp4', function(err) {
       if (err) {
-        console.log(err);
+        console.error(err);
         return res.status(500).send(err);
       }
 
-      try {
-        db.run("INSERT into events(id, date, camera_name) VALUES ('" + eventID
-        + "','" + req.body.date + "','" + req.body.cameraName + "')");
-      } catch(err) {
-        console.log(err);
-        return res.status(500).send(err);
-      }
+      // Genrate the thumbnail
+      thumbler.extract('./video_clips/clip' + eventID + '.mp4', './video_thumbnails/clip' + eventID + 'thumbnail.png', '00:00:01', '200x125', function(){
+        console.log('snapshot saved to snapshot.png (200x125) with a frame at 00:00:01');
+      });
 
+      // Save the event in the database
+      var event = { id: eventID, date: req.body.date, cameraName: req.body.cameraName };
+      dbconnection.query('INSERT into events SET ?', event, (err) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).send(err);
+        }
+      });
+
+      // Send the push notification
       sendPushNotification(eventID);
 
       res.send('File uploaded!');
@@ -78,25 +110,25 @@ router.post('/registerDevice', function(req, res) {
   if (!req)
   return res.status(500)
 
-  try {
-    db.run("INSERT into client_devices(deviceToken) VALUES ('" + req.body.deviceToken + "')");
-  } catch(err) {
-    console.log(err);
-    return res.status(500).send(err);
-  }
-
-  res.send('Device registered!');
-
+  var device = { deviceToken: req.body.deviceToken };
+  dbconnection.query('INSERT into client_devices SET ?', device, (err) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send(err);
+    }
+    res.send('Device registered!');
+  });
 });
 
 function sendPushNotification(id) {
-  db.all("SELECT DISTINCT deviceToken FROM client_devices", function(err, rows) {
+  dbconnection.query('SELECT DISTINCT deviceToken FROM client_devices', function(err, rows, fields) {
     if (err) {
-      console.log(err);
-      return
+      console.error(err);
+      return res.status(500).send(err);
     }
+
     rows.forEach(function (row) {
-      console.log(row.deviceToken);
+      // console.log(row.deviceToken);
       // send push notification with the id of the video clip
       //pushnotifications.sendPushNotification(eventID, row.deviceToken);
     });
