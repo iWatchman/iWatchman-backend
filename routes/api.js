@@ -24,10 +24,7 @@
 const express = require('express');
 const router = express.Router();
 const mysql = require('mysql');
-
-var ffmpeg = require('ffmpeg');
-var FfmpegCommand = require('fluent-ffmpeg');
-var thumbler = require('video-thumb');
+const thumbler = require('video-thumb');
 
 // var pushnotifications = require('./controllers/pushnotifications');
 
@@ -35,9 +32,8 @@ var config = {
   user: 'root',
   password: 'iwatchman',
   database: 'iwatchman'
+  host: '35.185.43.144'
 };
-
-//config.socketPath = `/cloudsql/test-project-156600:us-east1:iwatchman-db`;
 
 const dbconnection = mysql.createConnection(config);
 
