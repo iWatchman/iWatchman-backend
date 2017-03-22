@@ -31,7 +31,7 @@ const thumbler = require('video-thumb');
 var config = {
   user: 'root',
   password: 'iwatchman',
-  database: 'iwatchman'
+  database: 'iwatchman',
   host: '35.185.43.144'
 };
 
