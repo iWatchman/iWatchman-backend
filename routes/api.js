@@ -61,7 +61,7 @@ router.get('/getVideoThumbnail/:event_id', (req, res) => {
 
 router.post('/reportEvent', function(req, res) {
   if (!req || !req.files || !req.files.videoClip)
-  return res.status(500).send('No file was uploaded.');
+  return res.status(500).send('No file attached');
 
   let uploadedFile = req.files.videoClip;
 
@@ -72,7 +72,10 @@ router.post('/reportEvent', function(req, res) {
       return res.status(500).send(err);
     }
 
-    var eventID = (rows[0].id + 1);
+    var eventID = 1;
+    if (rows.length > 0) {
+      eventID = (rows[0].id + 1);
+    }
     // Move the file to the local folder
     uploadedFile.mv('./video_clips/clip' + eventID + '.mp4', function(err) {
       if (err) {
