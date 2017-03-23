@@ -39,10 +39,13 @@ var config = {
 const dbconnection = mysql.createConnection(config);
 
 router.get('/', function(req, res) {
+  console.info('Parameters: ' + JSON.stringify(req.params) +'\nBody: ' + JSON.stringify(req.body))
   res.json({ message: 'hooray! welcome to our api!' });
 });
 
 router.get('/getAllEvents', (req, res) => {
+  console.info('Parameters: ' + JSON.stringify(req.params) +'\nBody: ' + JSON.stringify(req.body))
+
   dbconnection.query('SELECT * FROM events', function(err, rows, fields) {
     if (err) {
       console.error(err);
@@ -53,14 +56,18 @@ router.get('/getAllEvents', (req, res) => {
 });
 
 router.get('/getVideoClip/:event_id', (req, res) => {
+  console.info('Parameters: ' + JSON.stringify(req.params) +'\nBody: ' + JSON.stringify(req.body))
   res.sendfile('./video_clips/clip' + req.params.event_id +'.mp4', {root: './' });
 });
 
 router.get('/getVideoThumbnail/:event_id', (req, res) => {
+  console.info('Parameters: ' + JSON.stringify(req.params) +'\nBody: ' + JSON.stringify(req.body))
   res.sendfile('./video_thumbnails/clip' + req.params.event_id + 'thumbnail.png', {root: './' });
 });
 
 router.post('/reportEvent', function(req, res) {
+  console.info('Parameters: ' + JSON.stringify(req.params) +'\nBody: ' + JSON.stringify(req.body))
+
   if (!req || !req.files || !req.files.videoClip)
   return res.status(500).send('No file attached');
 
@@ -121,6 +128,8 @@ router.post('/reportEvent', function(req, res) {
 });
 
 router.post('/registerDevice', function(req, res) {
+  console.info('Parameters: ' + JSON.stringify(req.params) +'\nBody: ' + JSON.stringify(req.body))
+
   if (!req)
   return res.status(500)
 
