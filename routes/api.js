@@ -25,6 +25,7 @@ const express = require('express');
 const router = express.Router();
 const mysql = require('mysql');
 const thumbler = require('video-thumb');
+const getDuration = require('get-video-duration');
 
 // var pushnotifications = require('./controllers/pushnotifications');
 
@@ -52,11 +53,11 @@ router.get('/getAllEvents', (req, res) => {
 });
 
 router.get('/getVideoClip/:event_id', (req, res) => {
-  res.sendfile('./video_clips/clip' + req.params.event_id +'.mp4', {root: './' })
+  res.sendfile('./video_clips/clip' + req.params.event_id +'.mp4', {root: './' });
 });
 
 router.get('/getVideoThumbnail/:event_id', (req, res) => {
-  res.sendfile('./video_thumbnails/clip' + req.params.event_id + 'thumbnail.png', {root: './' })
+  res.sendfile('./video_thumbnails/clip' + req.params.event_id + 'thumbnail.png', {root: './' });
 });
 
 router.post('/reportEvent', function(req, res) {
@@ -77,15 +78,28 @@ router.post('/reportEvent', function(req, res) {
       eventID = (rows[0].id + 1);
     }
     // Move the file to the local folder
-    uploadedFile.mv('./video_clips/clip' + eventID + '.mp4', function(err) {
+    var videoFilePath = './video_clips/clip' + eventID + '.mp4'
+    uploadedFile.mv(videoFilePath, function(err) {
       if (err) {
         console.error(err);
         return res.status(500).send(err);
       }
 
-      // Genrate the thumbnail
-      thumbler.extract('./video_clips/clip' + eventID + '.mp4', './video_thumbnails/clip' + eventID + 'thumbnail.png', '00:00:01', '200x125', function(){
-        console.log('snapshot saved to snapshot.png (200x125) with a frame at 00:00:01');
+      getDuration(videoFilePath).then(function (duration) {
+        console.log('Full length of the video: ' + duration + ' seconds');
+        var thumbnailTimeStamp = '01';
+        if (Math.round(duration) > 60) {
+          thumbnailTimeStamp = '59';
+        } else if (Math.round(duration) > 9) {
+          thumbnailTimeStamp = '' + (Math.round(duration) - 5);
+        }
+
+        var thumbnailTimeStampString = '00:00:' + thumbnailTimeStamp;
+
+        // Genrate the thumbnail
+        thumbler.extract(videoFilePath, './video_thumbnails/clip' + eventID + 'thumbnail.png', thumbnailTimeStampString, '200x125', function(){
+          console.log('Thumbnail saved to clip' + eventID + 'thumbnail.png (200x125) with a frame at ' + thumbnailTimeStampString);
+        });
       });
 
       // Save the event in the database
@@ -95,6 +109,7 @@ router.post('/reportEvent', function(req, res) {
           console.error(err);
           return res.status(500).send(err);
         }
+        console.log('Event successfully saved on the database');
       });
 
       // Send the push notification
