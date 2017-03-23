@@ -150,7 +150,7 @@ router.post('/reportEvent', function(req, res) {
       });
 
       // Save the event in the database
-      var event = { id: eventID, date: req.body.date, cameraName: req.body.cameraName };
+      var event = { id: eventID, date: req.body.date, cameraName: req.body.cameraName, accuracy:req.body.accuracy, confidence req.body.confidence};
       dbconnection.query('INSERT into events SET ?', event, (err) => {
         if (err) {
           console.error(err);
@@ -160,7 +160,7 @@ router.post('/reportEvent', function(req, res) {
       });
 
       // Send the push notification
-      sendPushNotification(eventID, req.body.date, req.body.cameraName);
+      sendPushNotification(eventID, req.body.date, req.body.cameraName, req.body.accuracy, req.body.confidence);
 
       res.send('File uploaded!');
     });
@@ -183,7 +183,7 @@ router.post('/registerDevice', function(req, res) {
   });
 });
 
-function sendPushNotification(eventID, givenDate, givenCameraName) {
+function sendPushNotification(eventID, givenDate, givenCameraName, givenAccuracy, givenConfidence) {
   dbconnection.query('SELECT DISTINCT deviceToken FROM client_devices', function(err, rows, fields) {
     if (err) {
       console.error(err);
@@ -195,9 +195,10 @@ function sendPushNotification(eventID, givenDate, givenCameraName) {
       notification.topic = 'co.tejasd.iWatchman'; // iOS app's Bundle ID
       notification.expiry = Math.floor(Date.now() / 1000) + 3600;
       notification.sound = 'ping.aiff';
+      notification.badge = 1;
       notification.alert = `\u2757 Alert on ${givenCameraName}`
 
-      notification.payload = {id: eventID, date: givenDate, cameraName: givenCameraName};
+      notification.payload = {id: eventID, date: givenDate, cameraName: givenCameraName, accuracy: givenAccuracy, confidence: givenConfidence};
       apnProvider.send(notification, row.deviceToken).then(function(result) {
         console.log(result);
       });
