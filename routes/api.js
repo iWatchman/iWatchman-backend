@@ -144,13 +144,13 @@ router.post('/reportEvent', function(req, res) {
         var thumbnailTimeStampString = '00:00:' + thumbnailTimeStamp;
 
         // Genrate the thumbnail
-        thumbler.extract(videoFilePath, './video_thumbnails/clip' + eventID + 'thumbnail.png', thumbnailTimeStampString, '200x125', function(){
-          console.log('Thumbnail saved to clip' + eventID + 'thumbnail.png (200x125) with a frame at ' + thumbnailTimeStampString);
+        thumbler.extract(videoFilePath, './video_thumbnails/clip' + eventID + 'thumbnail.png', thumbnailTimeStampString, '400x250', function(){
+          console.log('Thumbnail saved to clip' + eventID + 'thumbnail.png (400x250) with a frame at ' + thumbnailTimeStampString);
         });
       });
 
       // Save the event in the database
-      var event = { id: eventID, date: req.body.date, cameraName: req.body.cameraName, accuracy:req.body.accuracy, confidence req.body.confidence};
+      var event = { id: eventID, date: req.body.date, cameraName: req.body.cameraName, accuracy: req.body.accuracy, confidence: req.body.confidence};
       dbconnection.query('INSERT into events SET ?', event, (err) => {
         if (err) {
           console.error(err);
