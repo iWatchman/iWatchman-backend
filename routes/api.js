@@ -52,6 +52,13 @@ router.get('/', function(req, res) {
   res.json({ message: 'hooray! welcome to our api!' });
 });
 
+router.get('/testPushNotification', function(req, res) {
+  var cameraName = 'camera 2';
+  var date = '2017-03-22T21:17:19Z';
+  sendPushNotification(2, date, cameraName);
+  res.json({ message: 'hooray! welcome to our api!' });
+});
+
 router.get('/getAllEvents', (req, res) => {
   console.info('Parameters: ' + JSON.stringify(req.params) +'\nBody: ' + JSON.stringify(req.body))
 
@@ -153,7 +160,7 @@ router.post('/reportEvent', function(req, res) {
       });
 
       // Send the push notification
-      sendPushNotification(eventID, req.body.cameraName);
+      sendPushNotification(eventID, req.body.date, req.body.cameraName);
 
       res.send('File uploaded!');
     });
@@ -176,7 +183,7 @@ router.post('/registerDevice', function(req, res) {
   });
 });
 
-function sendPushNotification(id, cameraName) {
+function sendPushNotification(eventID, givenDate, givenCameraName) {
   dbconnection.query('SELECT DISTINCT deviceToken FROM client_devices', function(err, rows, fields) {
     if (err) {
       console.error(err);
@@ -184,17 +191,13 @@ function sendPushNotification(id, cameraName) {
     }
 
     rows.forEach(function (row) {
-      // console.log(row.deviceToken);
-      // send push notification with the id of the video clip
-      //pushnotifications.sendPushNotification(eventID, row.deviceToken);
-
       var notification = new apn.Notification();
       notification.topic = 'co.tejasd.iWatchman'; // iOS app's Bundle ID
       notification.expiry = Math.floor(Date.now() / 1000) + 3600;
       notification.sound = 'ping.aiff';
-      notification.alert = `\u2757 Alert on ${cameraName}`
+      notification.alert = `\u2757 Alert on ${givenCameraName}`
 
-      notification.payload = {eventID: id};
+      notification.payload = {id: eventID, date: givenDate, cameraName: givenCameraName};
       apnProvider.send(notification, row.deviceToken).then(function(result) {
         console.log(result);
       });
