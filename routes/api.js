@@ -57,12 +57,36 @@ router.get('/getAllEvents', (req, res) => {
 
 router.get('/getVideoClip/:event_id', (req, res) => {
   console.info('Parameters: ' + JSON.stringify(req.params) +'\nBody: ' + JSON.stringify(req.body))
-  res.sendfile('./video_clips/clip' + req.params.event_id +'.mp4', {root: './' });
+
+  dbconnection.query('SELECT * FROM events WHERE id = ' + req.params.event_id, function(err, rows, fields) {
+    if (err) {
+      console.error(err);
+      return res.status(500).send(err);
+    }
+
+    if (rows.length < 1) {
+      return res.status(500).send('Invalid ID');
+    }
+
+    res.sendfile('./video_clips/clip' + req.params.event_id +'.mp4', {root: './' });
+  });
 });
 
 router.get('/getVideoThumbnail/:event_id', (req, res) => {
   console.info('Parameters: ' + JSON.stringify(req.params) +'\nBody: ' + JSON.stringify(req.body))
-  res.sendfile('./video_thumbnails/clip' + req.params.event_id + 'thumbnail.png', {root: './' });
+
+  dbconnection.query('SELECT * FROM events WHERE id = ' + req.params.event_id, function(err, rows, fields) {
+    if (err) {
+      console.error(err);
+      return res.status(500).send(err);
+    }
+
+    if (rows.length < 1) {
+      return res.status(500).send('Invalid ID');
+    }
+
+    res.sendfile('./video_thumbnails/clip' + req.params.event_id + 'thumbnail.png', {root: './' });
+  });
 });
 
 router.post('/reportEvent', function(req, res) {
