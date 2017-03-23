@@ -22,14 +22,14 @@
 'use strict';
 
 const express = require('express');
-const router = express.Router();
 const mysql = require('mysql');
 const thumbler = require('video-thumb');
 const getDuration = require('get-video-duration');
+const apn = require('apn');
 
-// var pushnotifications = require('./controllers/pushnotifications');
+const router = express.Router();
 
-var config = {
+const config = {
   user: 'root',
   password: 'iwatchman',
   database: 'iwatchman',
@@ -37,6 +37,15 @@ var config = {
 };
 
 const dbconnection = mysql.createConnection(config);
+
+const apnProvider = new apn.Provider({
+  token: {
+    key: './apn_key/APNsAuthKey_QBPJZP5JKB.p8', // Path to the key p8 file
+    keyId: 'QBPJZP5JKB', // The Key ID of the p8 file (available at https://developer.apple.com/account/ios/certificate/key)
+    teamId: 'LLVD2YCLN9', // The Team ID of your Apple Developer Account (available at https://developer.apple.com/account/#/membership/)
+  },
+  production: false // Set to true if sending a notification to a production iOS app
+});
 
 router.get('/', function(req, res) {
   console.info('Parameters: ' + JSON.stringify(req.params) +'\nBody: ' + JSON.stringify(req.body))
@@ -144,7 +153,7 @@ router.post('/reportEvent', function(req, res) {
       });
 
       // Send the push notification
-      sendPushNotification(eventID);
+      sendPushNotification(eventID, req.body.cameraName);
 
       res.send('File uploaded!');
     });
@@ -167,7 +176,7 @@ router.post('/registerDevice', function(req, res) {
   });
 });
 
-function sendPushNotification(id) {
+function sendPushNotification(id, cameraName) {
   dbconnection.query('SELECT DISTINCT deviceToken FROM client_devices', function(err, rows, fields) {
     if (err) {
       console.error(err);
@@ -178,6 +187,17 @@ function sendPushNotification(id) {
       // console.log(row.deviceToken);
       // send push notification with the id of the video clip
       //pushnotifications.sendPushNotification(eventID, row.deviceToken);
+
+      var notification = new apn.Notification();
+      notification.topic = 'co.tejasd.iWatchman'; // iOS app's Bundle ID
+      notification.expiry = Math.floor(Date.now() / 1000) + 3600;
+      notification.sound = 'ping.aiff';
+      notification.alert = `\u2757 Alert on ${cameraName}`
+
+      notification.payload = {eventID: id};
+      apnProvider.send(notification, row.deviceToken).then(function(result) {
+        console.log(result);
+      });
     });
   });
 }
